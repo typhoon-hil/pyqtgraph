@@ -292,19 +292,22 @@ class AxisItem(GraphicsWidget):
         ## changed; we use this to decide whether the item needs to be resized
         ## to accomodate.
         if self.orientation in ['left', 'right']:
-            mx = max(self.textWidth, x)
-            if mx > self.textWidth or mx < self.textWidth-10:
-                self.textWidth = mx
+            if x > self.textWidth:  # growing
+                self.textWidth = x
                 if self.style['autoExpandTextSpace'] is True:
                     self._updateWidth()
-                    #return True  ## size has changed
+            if x < self.textWidth - 10:  # shrinking
+                if x >= 30:
+                    self.textWidth = x
+                else:
+                    self.textWidth = 30
+                if self.style['autoExpandTextSpace'] is True:
+                    self._updateWidth()
         else:
-            mx = max(self.textHeight, x)
-            if mx > self.textHeight or mx < self.textHeight-10:
-                self.textHeight = mx
+            if x > self.textHeight or x < self.textHeight - 10:
+                self.textHeight = x
                 if self.style['autoExpandTextSpace'] is True:
                     self._updateHeight()
-                    #return True  ## size has changed
         
     def _adjustSize(self):
         if self.orientation in ['left', 'right']:
@@ -860,13 +863,13 @@ class AxisItem(GraphicsWidget):
             ticks = tickLevels[i][1]
         
             ## length of tick
-            tickLength = self.style['tickLength'] / ((i*0.5)+1.0)
-                
-            lineAlpha = 255 / (i+1)
+            tickLength = self.style['tickLength'] / ((i * 0.5) + 1.0)
+
+            lineAlpha = 255 / (i + 1)
             if self.grid is not False:
-                lineAlpha *= self.grid/255. * np.clip((0.05  * lengthInPixels / (len(ticks)+1)), 0., 1.)
-            
-            for v in ticks:
+                lineAlpha *= self.grid / 255. * np.clip((0.05 * lengthInPixels / (len(ticks) + 1)), 0., 1.)
+
+            for j,v in enumerate(ticks):
                 ## determine actual position to draw this tick
                 x = (v * xScale) - offset
                 if x < xMin or x > xMax:  ## last check to make sure no out-of-bounds ticks are drawn
@@ -879,7 +882,7 @@ class AxisItem(GraphicsWidget):
                 p1[axis] = tickStart
                 p2[axis] = tickStop
                 if self.grid is False:
-                    p2[axis] += tickLength*tickDir
+                    p2[axis] += tickLength * tickDir
                 tickPen = self.pen()
                 color = tickPen.color()
                 color.setAlpha(lineAlpha)
@@ -912,6 +915,7 @@ class AxisItem(GraphicsWidget):
             #textHeight = self.style['tickTextHeight'] ## space allocated for horizontal text
             
         textSize2 = 0
+        last_textSize2 = 0
         textRects = []
         textSpecs = []  ## list of draw
         
@@ -973,9 +977,9 @@ class AxisItem(GraphicsWidget):
                         break
                 if finished:
                     break
-            
-            #spacing, values = tickLevels[best]
-            #strings = self.tickStrings(values, self.scale, spacing)
+            last_textSize2 = textSize2
+            # spacing, values = tickLevels[best]
+            # strings = self.tickStrings(values, self.scale, spacing)
             # Determine exactly where tick text should be drawn
             for j in range(len(strings)):
                 vstr = strings[j]
@@ -1008,8 +1012,7 @@ class AxisItem(GraphicsWidget):
         profiler('compute text')
             
         ## update max text size if needed.
-        self._updateMaxTextSize(textSize2)
-        
+        self._updateMaxTextSize(last_textSize2)
         return (axisSpec, tickSpecs, textSpecs)
     
     def drawPicture(self, p, axisSpec, tickSpecs, textSpecs):
