@@ -536,10 +536,18 @@ class GraphicsScene(QtGui.QGraphicsScene):
 
     @staticmethod
     def translateGraphicsItem(item):
-        ## for fixing pyqt bugs where the wrong item is returned
+        # for fixing pyqt bugs where the wrong item is returned
         if HAVE_SIP and isinstance(item, sip.wrapper):
             addr = sip.unwrapinstance(sip.cast(item, QtGui.QGraphicsItem))
-            item = GraphicsScene._addressCache.get(addr, item)
+            item_from_cache = GraphicsScene._addressCache.get(addr, item)
+
+            # BUG FIX: Don't use item if underlying C/C++ object was deleted
+            if sip.isdeleted(item_from_cache):
+                # use original item
+                return item
+            else:
+                return item_from_cache
+
         return item
 
     @staticmethod
