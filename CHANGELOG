@@ -1,3 +1,9 @@
+pyqtgraph-0.10.1
+
+  Bugfixes:
+   - AxisItems can now resize back to their original size
+   - GraphicsScene translateGraphicsItem() function no longer uses items whose underlying C/C++ objects were deleted
+
 pyqtgraph-0.10.0
 
   New Features:
